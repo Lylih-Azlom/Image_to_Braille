@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f4">
+    <link rel="stylesheet" href="./CSS/style.css">
+    <title>점자 변환</title>
+</head>
+
+<body>
+    <main class="shell">
+        <header class="top">
+            <div class="brand">
+                <span class="mark">⠿</span> 점자 변환
+            </div>
+            <div class="topnote">
+                이미지 속 영문을 읽고, 점자로 출력합니다
+            </div>
+        </header>
+        <section class="hero">
+            <div class="eyebrow">IMAGE TO BRAILLE</div>
+            <h1>사진 속 문장을<br>손끝으로 읽어보세요.</h1>
+            <p>이미지를 업로드하면 OCR로 읽어낸 후, 이를 점자로 변환해줍니다.</p>
+        </section>
+        <div class="steps" aria-label="처리 단계">
+            <span class="step active" id="step1"><span class="num">1</span>이미지 업로드</span><span class="arrow">→</span>
+            <span class="step" id="step2"><span class="num">2</span>텍스트 확인</span><span class="arrow">→</span>
+            <span class="step" id="step3"><span class="num">3</span>점자 출력</span>
+        </div>
+        <div class="layout">
+            <section class="card">
+                <div class="card-head">
+                    <h2>이미지와 인식 결과</h2>
+                    <span class="sub">PNG, JPG, WEBP</span>
+                </div>
+                <div class="drop" id="drop">
+                    <div class="drop-content" id="dropContent">
+                        <div class="upload-icon">＋</div>
+                        <strong>이미지를 끌어다 놓거나 선택하세요</strong><small>선명한 영문 인쇄물을 권장합니다</small>
+                    </div>
+                    <img class="preview" id="preview" alt="업로드한 이미지 미리보기">
+                    <input id="file" type="file" accept="image/png,image/jpeg,image/webp" aria-label="이미지 선택">
+                </div>
+                <div class="row">
+                    <button class="btn secondary wide" id="clearBtn" disabled>이미지 지우기</button>
+                    <button class="btn primary wide" id="recognizeBtn" disabled>이미지에서 글자 인식</button>
+                </div>
+                <div class="text-label">
+                    <label for="recognized">인식된 영문</label><span class="sub" id="charCount">0자</span>
+                </div>
+                <textarea class="textarea" id="recognized" spellcheck="false"
+                                placeholder="OCR 결과가 여기에 표시됩니다. 직접 입력하거나 수정할 수도 있어요."></textarea>
+                <label class="mode-toggle">
+                    <input id="blindMode" type="checkbox" checked>
+                    <span>
+                        <strong>음성 안내 모드</strong>
+                        <small>입력을 멈추면 텍스트를 읽고 점자로 변환합니다.</small>
+                    </span>
+                </label>
+                <div class="hint">영문자, 숫자, 기본 문장부호를 지원하는 6점 점자 미리보기를 제공합니다.</div>
+                <div class="status" id="ocrStatus" role="status"></div>
+            </section>
+            <section class="card">
+                <div class="card-head">
+                    <h2>점자 미리보기</h2><span class="sub">영문 기본 점자</span>
+                </div>
+                <div class="result-panel">
+                    <div class="braille-text" id="brailleText" aria-label="점자 미리보기"></div>
+                    <div class="empty" id="empty">영문을 입력하거나 OCR을 실행하면<br>점자 패턴이 여기에 표시됩니다.</div>
+                    <div class="cells" id="cells"></div>
+                </div>
+                <div class="result-actions">
+                    <button class="btn secondary wide" id="convertBtn">점자 변환</button>
+                    <button class="btn primary wide" id="printBtn" disabled>디스플레이에 출력</button>
+                </div>
+                <div class="status" id="printStatus" role="status"></div>
+                <div class="foot">점자 미리보기는 영문 6점 기본 패턴을 사용합니다. 실제 기기의 점자 규칙과 모터 배열에 맞춰 Python 서버에서 출력 데이터를 확인해 주세요.
+                </div>
+            </section>
+        </div>
+    </main>
+    <div class="toast" id="toast" role="status"></div>
+    <script src="./Javascript/srcipt.js">
+        
+    </script>
+</body>
+
+</html>
