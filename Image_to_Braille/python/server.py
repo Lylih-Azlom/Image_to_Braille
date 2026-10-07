@@ -6,15 +6,26 @@ from flask_cors import CORS
 import easyocr
 import time
 import serial
+import serial.tools.list_ports
+
 
 app = Flask(__name__)
 CORS(app)
 
 # 아두이노 연결 정보
-SERIAL_PORT = "COM10"
 BAUD_RATE = 9600
-
 arduino = None
+
+def find_arduino():
+    ports = serial.tools.list_ports.comports()
+
+    for port in ports:
+        print("발견된 포트:", port.device, port.description)
+
+        if "Arduino" in port.description:
+            return port.device
+
+    return None
 
 # OCR 준비
 reader = easyocr.Reader(['en'])
@@ -104,14 +115,14 @@ def connect_arduino():
         return
 
     arduino = serial.Serial(
-        SERIAL_PORT,
+        find_arduino(),
         BAUD_RATE,
         timeout=1
     )
 
     time.sleep(2)
 
-    print("Arduino 연결 완료:", SERIAL_PORT)
+    print("Arduino 연결 완료:", find_arduino())
 
 
 if __name__ == "__main__":
