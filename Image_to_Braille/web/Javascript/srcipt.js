@@ -36,36 +36,38 @@ const cap = 32, num = 60, space = 0;
 function enc(text) {
     const out = [];
     let inNum = false;
+
     for (const ch of text) {
         const c = ch.toLowerCase();
+
         // 공백, 줄바꿈, 탭일 경우
         if (ch === ' ' || ch === '\n' || ch === '\t') {
-            out.push({ ch: ' ', bits: space }); // 공백을 나타내는 점자로 추가
+            out.push({ ch: ' ', bits: space });
             inNum = false;
             continue;
         }
-        // 대문자일 경우
-        if (/[A-Z]/.test(ch))
-            out.push({ ch: '⠠', bits: cap, source: '' }); // 대문자 표시용 점자 추가
+
+        // 대문자 표시용 점자 제거
+        // 대문자도 소문자와 동일한 점자 패턴으로 변환
+
         // 숫자일 경우
         if (/[0-9]/.test(ch) && !inNum) {
-            out.push({ ch: '⠼', bits: num, source: '' }); // 숫자 표시용 점자 추가
+            out.push({ ch: '⠼', bits: num, source: '' });
             inNum = true;
         }
-        // 숫자가 아니면
+
+        // 숫자가 아니면 숫자 묶음 탈출
         if (!/[0-9]/.test(ch))
-            inNum = false; // 숫자묶음 탈출
+            inNum = false;
 
-        const bits = map[c]; // 점자 맵에서 현재 문자에 맞는 점자 불러오기
+        const bits = map[c];
 
-        // 없는 문자(undefined)가 아니라면
         if (bits !== undefined)
-            out.push({ ch, bits, source: ch }); // 결과물(out) 끝에 객체 추가
+            out.push({ ch, bits, source: ch });
     }
 
-    return out; // 저장된 결과물 반환
+    return out;
 }
-
 // 점자를 화면에 표시할 HTML 작성
 function dots(bits) {
     return [0, 3, 1, 4, 2, 5].map(
@@ -93,8 +95,8 @@ function render() {
     $('empty').style.display = txt.trim() ? 'none' : 'block'; // 입력이 있으면 안내 문구를 숨기고, 아니면 표시
     $('printBtn').disabled = !txt.trim(); // 입력된 텍스트가 없으면 변환 버튼 비활성화
     $('cells').innerHTML = brailleCells.slice(0, 100).map(x =>
-        `<span class="cell"><span class="dots">${dots(x.bits)}</span>${x.source || '기호'}</span>` // 미리보기용 HTML 생성 (최대 100개의 셀)
-    ).join('');
+        `<span class="cell"><span class="dots">${dots(x.bits)}</span>${x.source || ''}</span>`
+).join('');
     $('step2').classList.toggle('active', !!selectedFile || !!txt.trim()); // 이미지가 선택됐거나 텍스트가 존재할 시 2단계(텍스트 확인) 표시 활성화
     $('step3').classList.toggle('active', !!txt.trim());
 }
@@ -218,7 +220,7 @@ $('recognizeBtn').onclick = async () => { // async: 요청이 끝날 때까지 �
     try {
         const form = new FormData();
         form.append('image', selectedFile); // formData에 이미지 파일 삽입
-        const base = $('apiBase').value.replace(/\/$/, '');
+        const base = 'http://127.0.0.1:5000';
         const res = await fetch(base + '/api/recognize', { method: 'POST', body: form }); // /api/recognize를 붙여 POST 요청 전송
         if (!res.ok)
             throw Error(`서버 응답 ${res.status}`); // 서버 응답 없음
@@ -255,43 +257,68 @@ $('recognizeBtn').onclick = async () => { // async: 요청이 끝날 때까지 �
 };
 // 출력 버튼을 누를 시
 $('printBtn').onclick = async () => {
+
     const btn = $('printBtn');
+
     btn.disabled = true;
     btn.textContent = '전송 중입니다';
+
     $('printStatus').className = 'status';
-    $('printStatus').textContent = '데이터를 Python 서버로 보냅니다';
+    $('printStatus').textContent =
+        'Arduino로 데이터를 보내는 중입니다.';
+
     try {
-        const base = $('apiBase').value.replace(/\/$/, '');
+
+        // Python 서버 주소
+        const base = 'http://127.0.0.1:5000';
+
+        // OCR 결과
+        const text = $('recognized').value;
+
+        if (!text.trim()) {
+            throw new Error('출력할 문자가 없습니다.');
+        }
+
+        // Python 서버에 보낼 데이터
         const payload = {
-            text: $('recognized').value,
-            braille: brailleCells.map(x => x.bits),
-            cells: brailleCells.map(x => ({
-                character: x.source || null, dots: Array.from({ length: 6 }, (_, i) => !! (x.bits & (1 << i)))
-            }))
+            text: text
         };
-        const port = $('serialPort').value.trim();
-        if (port)
-            payload.port = port;
+
+        // Python 서버로 전송
         const res = await fetch(base + '/api/print', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(payload)
         });
-        if (!res.ok)
-            throw Error(`서버 응답 ${res.status}`);
-        const data = await res.json().catch(() => ({}));
-        $('printStatus').className = 'status ok'
-        $('printStatus').textContent = data.message || 'Arduino로 전송했습니다. 점자 디스플레이를 확인해 주세요.';
+
+        if (!res.ok) {
+            throw new Error(`서버 응답 ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        $('printStatus').className = 'status ok';
+
+        $('printStatus').textContent =
+            data.message || 'Arduino로 전송했습니다.';
+
         $('step3').classList.add('active');
-    }
-    catch (err) {
-        $('printStatus').className = 'status error';
-        $('printStatus').textContent = `출력 요청 실패: ${err.message}.
-                                        Python 서버의 /api/print 연결과 Arduino 포트를 확인해 주세요.`;
-    }
-    finally {
-        btn.disabled = !$('recognized').value.trim();
-        btn.textContent = '디스플레이에 출력';
+
+    } catch (err) {
+
+        console.error(err);
+
+        $('printStatus').className = 'status';
+
+        $('printStatus').textContent =
+            '출력 요청 실패: ' + err.message;
+
+    } finally {
+
+        btn.disabled = false;
+        btn.textContent = 'Display 출력';
     }
 };
 render(); // 새로고침
