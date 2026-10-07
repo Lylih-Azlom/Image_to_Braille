@@ -1,9 +1,12 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import easyocr
-import os
 import time
 import serial
+
 app = Flask(__name__)
 CORS(app)
 
